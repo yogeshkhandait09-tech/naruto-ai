@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global AI Chatbot</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #212121;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 30px;
+        }
+        h1 { color: #00d2ff; margin-bottom: 10px; }
+        
+        /* टॉप कंट्रोल्स (स्मार्ट सर्च और डिलीट बटन) */
+        .header-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 10px;
+            width: 450px;
+            justify-content: space-between;
+        }
+        input[type="text"].lang-input, .clear-btn {
+            padding: 8px 12px;
+            border-radius: 5px;
+            border: none;
+            background-color: #404040;
+            color: white;
+            font-size: 14px;
+        }
+        input[type="text"].lang-input { width: 60%; }
+        input[type="text"].lang-input:focus { outline: 2px solid #00d2ff; }
+        
+        .clear-btn { background-color: #ff4d4d; color: white; font-weight: bold; cursor: pointer;}
+        .clear-btn:hover { background-color: #ff1a1a; }
+
+        #chat-container {
+            width: 450px;
+            height: 550px;
+            background-color: #2f2f2f;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0px 4px 15px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+        #chat-history {
+            flex-grow: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .message {
+            padding: 10px 15px;
+            border-radius: 15px;
+            max-width: 80%;
+            word-wrap: break-word;
+            line-height: 1.4;
+        }
+        .user-msg { background-color: #0084ff; align-self: flex-end; border-bottom-right-radius: 2px;}
+        .ai-msg { background-color: #444; align-self: flex-start; border-bottom-left-radius: 2px;}
+        
+        #input-area {
+            display: flex;
+            padding: 15px;
+            background-color: #404040;
+        }
+        #user-input {
+            flex-grow: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            outline: none;
+            background-color: #555;
+            color: white;
+            font-size: 15px;
+        }
+        button.send-btn {
+            padding: 10px 20px;
+            margin-left: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #00d2ff;
+            color: black;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        button.send-btn:hover { background-color: #00b8e6; }
+    </style>
+</head>
+<body>
+
+    <h1>मेरा AI असिस्टेंट 🤖</h1>
+    
+    <div class="header-controls">
+        <input list="languages" id="language-select" class="lang-input" value="Hindi" placeholder="कोई भी भाषा टाइप करें...">
+        <datalist id="languages">
+            <option value="Auto-Detect (मेरी भाषा समझो)"></option>
+            <option value="Hindi"></option>
+            <option value="English"></option>
+            <option value="Hinglish"></option>
+            <option value="Spanish"></option>
+            <option value="French"></option>
+            <option value="German"></option>
+            <option value="Chinese (Mandarin)"></option>
+            <option value="Japanese"></option>
+            <option value="Arabic"></option>
+            <option value="Russian"></option>
+            <option value="Portuguese"></option>
+            <option value="Italian"></option>
+            <option value="Korean"></option>
+            <option value="Bengali"></option>
+            <option value="Urdu"></option>
+            <option value="Marathi"></option>
+            <option value="Telugu"></option>
+            <option value="Tamil"></option>
+            <option value="Gujarati"></option>
+            <option value="Punjabi"></option>
+        </datalist>
+        <button class="clear-btn" onclick="clearHistory()">Clear Chat</button>
+    </div>
+    
+    <div id="chat-container">
+        <div id="chat-history"></div>
+        
+        <div id="input-area">
+            <input type="text" id="user-input" placeholder="अपना मैसेज यहाँ लिखें..." onkeypress="handleKeyPress(event)">
+            <button class="send-btn" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        let aiMemory = [];
+
+        window.onload = () => {
+            const savedHtml = localStorage.getItem("chatHtml");
+            const savedMemory = localStorage.getItem("aiMemory");
+            
+            if (savedHtml) {
+                document.getElementById("chat-history").innerHTML = savedHtml;
+                aiMemory = JSON.parse(savedMemory) || [];
+            } else {
+                document.getElementById("chat-history").innerHTML = `<div class="message ai-msg">Welcome! I am your global AI. Select any language above! 🌍</div>`;
+            }
+            scrollToBottom();
+        };
+
+        function saveToStorage() {
+            localStorage.setItem("chatHtml", document.getElementById("chat-history").innerHTML);
+            localStorage.setItem("aiMemory", JSON.stringify(aiMemory));
+        }
+
+        function clearHistory() {
+            localStorage.removeItem("chatHtml");
+            localStorage.removeItem("aiMemory");
+            aiMemory = [];
+            document.getElementById("chat-history").innerHTML = `<div class="message ai-msg">चैट क्लियर हो गई है! नई शुरुआत करते हैं।</div>`;
+        }
+
+        function scrollToBottom() {
+            const chatBox = document.getElementById("chat-history");
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const inputField = document.getElementById("user-input");
+            const message = inputField.value.trim();
+            if (!message) return;
+
+            const chatBox = document.getElementById("chat-history");
+            let selectedLanguage = document.getElementById("language-select").value.trim();
+            
+            // अगर बॉक्स खाली है, तो डिफ़ॉल्ट रूप से ऑटो-डिटेक्ट लगा दें
+            if(selectedLanguage === "") {
+                selectedLanguage = "the same language the user is speaking";
+            }
+
+            chatBox.innerHTML += `<div class="message user-msg">${message}</div>`;
+            inputField.value = "";
+            scrollToBottom();
+
+            aiMemory.push({ role: "user", parts: [{ text: message }] });
+
+            const typingId = "typing-" + Date.now();
+            chatBox.innerHTML += `<div id="${typingId}" class="message ai-msg"><i>टाइप कर रहा है...</i></div>`;
+            scrollToBottom();
+
+            try {
+                const response = await fetch("http://127.0.0.1:3000/api/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        contents: aiMemory,
+                        systemInstruction: `You are a helpful and intelligent AI assistant. You MUST strictly reply in the language specified here: [${selectedLanguage}]. If the specified language is 'Auto-Detect', respond in the language the user wrote their prompt in.`,
+                        temperature: 0.7,
+                        model: "gemini-2.5-flash"
+                    })
+                });
+
+                const data = await response.json();
+                document.getElementById(typingId).remove();
+
+                if(data && data.text) {
+                    chatBox.innerHTML += `<div class="message ai-msg">${data.text.replace(/\n/g, "<br>")}</div>`;
+                    aiMemory.push({ role: "model", parts: [{ text: data.text }] });
+                    saveToStorage(); 
+                } else {
+                    chatBox.innerHTML += `<div class="message ai-msg">माफ़ करना, मुझे जवाब देने में परेशानी हो रही है।</div>`;
+                }
+            } catch (error) {
+                document.getElementById(typingId).remove();
+                chatBox.innerHTML += `<div class="message ai-msg" style="color: #ff6b6b;"><b>Connection Error:</b> क्या आपका Python सर्वर चालू है?</div>`;
+                aiMemory.pop(); 
+            }
+            scrollToBottom();
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === "Enter") sendMessage();
+        }
+    </script>
+</body>
+</html>
