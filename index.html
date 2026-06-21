@@ -178,7 +178,6 @@
             const chatBox = document.getElementById("chat-history");
             let selectedLanguage = document.getElementById("language-select").value.trim();
             
-            // अगर बॉक्स खाली है, तो डिफ़ॉल्ट रूप से ऑटो-डिटेक्ट लगा दें
             if(selectedLanguage === "") {
                 selectedLanguage = "the same language the user is speaking";
             }
@@ -194,7 +193,8 @@
             scrollToBottom();
 
             try {
-                const response = await fetch("http://127.0.0.1:3000/api/chat", {
+                // यहाँ हमने आपका नया Render वाला लिंक डाल दिया है! 👇
+                const response = await fetch("https://naruto-ai-4.onrender.com/api/chat", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
@@ -217,7 +217,7 @@
                 }
             } catch (error) {
                 document.getElementById(typingId).remove();
-                chatBox.innerHTML += `<div class="message ai-msg" style="color: #ff6b6b;"><b>Connection Error:</b> क्या आपका Python सर्वर चालू है?</div>`;
+                chatBox.innerHTML += `<div class="message ai-msg" style="color: #ff6b6b;"><b>Connection Error:</b> सर्वर से कनेक्ट नहीं हो पा रहा है।</div>`;
                 aiMemory.pop(); 
             }
             scrollToBottom();
