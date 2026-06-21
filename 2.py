@@ -43,7 +43,6 @@ if not api_key:
 else:
     ai_client = genai.Client(api_key=api_key)
 
-
 @app.post("/api/chat")
 async def chat_endpoint(payload: ChatRequest):
     if not ai_client:
